@@ -43,7 +43,7 @@ def build_tensor_serving_input_receiver_fn(shape, dtype=tf.float32,
     features = tf.placeholder(
         dtype=dtype, shape=[batch_size] + shape, name='input_tensor')
 
-    return tf.estimator.export.TensorServingInputReceiver(
+    return tf.estimator.export.ServingInputReceiver(
         features=features, receiver_tensors=features)
 
   return serving_input_receiver_fn

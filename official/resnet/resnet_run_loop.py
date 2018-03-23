@@ -207,6 +207,9 @@ def resnet_model_fn(features, labels, mode, model_class,
     current mode.
   """
 
+  if isinstance(features, dict):
+    features = features.values()[0]
+
   # Generate a summary node for the images
   tf.summary.image('images', features, max_outputs=6)
 
