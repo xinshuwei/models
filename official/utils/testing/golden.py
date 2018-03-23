@@ -1,4 +1,4 @@
-# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,14 +44,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
 import argparse
 import hashlib
 import json
 import os
 import shutil
-import warnings
-
 
 import numpy as np
 import tensorflow as tf
@@ -59,18 +56,15 @@ from tensorflow.python import pywrap_tensorflow
 
 
 class BaseTest(tf.test.TestCase):
-  """TestCase subclass for performing golden tests.
-  """
+  """TestCase subclass for performing golden tests."""
 
   def regenerate(self):
-    """Subclasses should override this class to generate new reference data.
-    """
+    """Subclasses should override this function to generate a new reference."""
     raise NotImplementedError
 
   @property
   def file(self):
-    """Subclasses should override to "return __file__".
-    """
+    """Subclasses should override to "return __file__"."""
     raise NotImplementedError
 
   @property
@@ -100,7 +94,7 @@ class BaseTest(tf.test.TestCase):
       input_array: Tensor (numpy array), from which key values are extracted.
 
     Returns:
-      A list of key values.
+      A list of values derived from the input_array for equality tests.
     """
     output = list(input_array.shape)
     flat_array = input_array.flatten()
@@ -140,7 +134,7 @@ class BaseTest(tf.test.TestCase):
     # Make sure there is a clean space for results.
     if os.path.exists(data_dir):
       shutil.rmtree(data_dir)
-    os.mkdir(data_dir)
+    os.makedirs(data_dir)
 
     # Serialize graph for comparison.
     graph_bytes = graph.as_graph_def().SerializeToString()
@@ -162,10 +156,10 @@ class BaseTest(tf.test.TestCase):
 
       # ops are evaluated even if there is no correctness function to ensure
       # that they can be evaluated.
-      ops = [op.eval() for op in ops_to_eval]
+      eval_results = [op.eval() for op in ops_to_eval]
 
       if correctness_function is not None:
-        results = correctness_function(*ops)
+        results = correctness_function(*eval_results)
         with open(os.path.join(data_dir, "results.json"), "wt") as f:
           json.dump(results, f)
 
@@ -210,7 +204,7 @@ class BaseTest(tf.test.TestCase):
             data_dir, self.ckpt_prefix))
         if differences:
           print()
-          warnings.warn(
+          tf.logging.warn(
               "The provided graph is different than expected:\n  {}\n"
               "However the weights were still able to be loaded.\n".format(
                   differences)
@@ -219,9 +213,9 @@ class BaseTest(tf.test.TestCase):
         raise self.failureException("Weight load failed. Graph comparison:\n  "
                                     "{}".format(differences))
 
-      ops = [op.eval() for op in ops_to_eval]
+      eval_results = [op.eval() for op in ops_to_eval]
       if correctness_function is not None:
-        results = correctness_function(*ops)
+        results = correctness_function(*eval_results)
         with open(os.path.join(data_dir, "results.json"), "rt") as f:
           expected_results = json.load(f)
         self.assertAllClose(results, expected_results)
@@ -245,7 +239,7 @@ class BaseTest(tf.test.TestCase):
         dtypes into builtin dtypes.
     """
 
-    ops_to_eval = [] if ops_to_eval is None else ops_to_eval
+    ops_to_eval = ops_to_eval or []
 
     if test:
       self._evaluate_test_case(

@@ -1,4 +1,4 @@
-# Copyright 2017 The TensorFlow Authors. All Rights Reserved.
+# Copyright 2018 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-
 import sys
-
 
 import tensorflow as tf
 from official.resnet import resnet_model   # pylint: disable=g-bad-import-order
@@ -30,8 +28,7 @@ DATA_FORMAT = "channels_last"  # CPU instructions often preclude channels_last
 
 
 class BaseTest(golden.BaseTest):
-  """Tests for core ResNet layers.
-  """
+  """Tests for core ResNet layers."""
 
   @property
   def file(self):
