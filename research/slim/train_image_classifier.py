@@ -187,7 +187,7 @@ tf.app.flags.DEFINE_string(
     'as `None`, then the model_name flag is used.')
 
 tf.app.flags.DEFINE_integer(
-    'batch_size', 32, 'The number of samples in each batch.')
+    'batch_size', 32, 'The number of samples in each batch.')##训练的参数*1000=运算时使用的显存
 
 tf.app.flags.DEFINE_integer(
     'train_image_size', None, 'Train image size')
@@ -389,11 +389,11 @@ def main(_):
     # Config model_deploy #
     #######################
     deploy_config = model_deploy.DeploymentConfig(
-        num_clones=FLAGS.num_clones,
+        num_clones=FLAGS.num_clones,##gpu数量 或者几台机器
         clone_on_cpu=FLAGS.clone_on_cpu,
         replica_id=FLAGS.task,
         num_replicas=FLAGS.worker_replicas,
-        num_ps_tasks=FLAGS.num_ps_tasks)
+        num_ps_tasks=FLAGS.num_ps_tasks)##两台不同的机器或gpu 用不同的数据   算梯度  parmameter 搜集多台的梯度后做平均；通讯限制于网络的传输
 
     # Create global_step
     with tf.device(deploy_config.variables_device()):
@@ -436,9 +436,9 @@ def main(_):
 
       train_image_size = FLAGS.train_image_size or network_fn.default_image_size
 
-      image = image_preprocessing_fn(image, train_image_size, train_image_size)
+      image = image_preprocessing_fn(image, train_image_size, train_image_size)##预处理
 
-      images, labels = tf.train.batch(
+      images, labels = tf.train.batch(##获取一个批次
           [image, label],
           batch_size=FLAGS.batch_size,
           num_threads=FLAGS.num_preprocessing_threads,
@@ -464,14 +464,14 @@ def main(_):
             end_points['AuxLogits'], labels,
             label_smoothing=FLAGS.label_smoothing, weights=0.4,
             scope='aux_loss')
-      slim.losses.softmax_cross_entropy(
+      slim.losses.softmax_cross_entropy(##没有接返回值，损失直接放到get collection    
           logits, labels, label_smoothing=FLAGS.label_smoothing, weights=1.0)
       return end_points
 
     # Gather initial summaries.
     summaries = set(tf.get_collection(tf.GraphKeys.SUMMARIES))
 
-    clones = model_deploy.create_clones(deploy_config, clone_fn, [batch_queue])
+    clones = model_deploy.create_clones(deploy_config, clone_fn, [batch_queue])##允许多卡兼容运行
     first_clone_scope = deploy_config.clone_scope(0)
     # Gather update_ops from the first clone. These contain, for example,
     # the updates for the batch_norm variables created by network_fn.
@@ -494,7 +494,7 @@ def main(_):
       summaries.add(tf.summary.histogram(variable.op.name, variable))
 
     #################################
-    # Configure the moving averages #
+    # Configure the moving averages #   
     #################################
     if FLAGS.moving_average_decay:
       moving_average_variables = slim.get_model_variables()
@@ -512,7 +512,7 @@ def main(_):
       summaries.add(tf.summary.scalar('learning_rate', learning_rate))
 
     if FLAGS.sync_replicas:
-      # If sync_replicas is enabled, the averaging will be done in the chief
+      # If sync_replicas is enabled, the averaging will be done in the chief##同步
       # queue runner.
       optimizer = tf.train.SyncReplicasOptimizer(
           opt=optimizer,
