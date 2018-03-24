@@ -39,13 +39,14 @@ from datasets import dataset_utils
 # The URL where the Flowers data can be downloaded.
 _DATA_URL = 'http://download.tensorflow.org/example_images/flower_photos.tgz'
 
-# The number of images in the validation set.
+# The number of images in the validationse测试 验证集，剩下作为训练集
 _NUM_VALIDATION = 350
 
-# Seed for repeatability.
+# Seed for repeatability.随机数
+
 _RANDOM_SEED = 0
 
-# The number of shards per dataset split.
+# The number of shards per dataset split.分成5份   分成份  工程上大概保证每个shards包含1024张图片左右
 _NUM_SHARDS = 5
 
 
@@ -55,13 +56,13 @@ class ImageReader(object):
   def __init__(self):
     # Initializes function that decodes RGB JPEG data.
     self._decode_jpeg_data = tf.placeholder(dtype=tf.string)
-    self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)
-
+    self._decode_jpeg = tf.image.decode_jpeg(self._decode_jpeg_data, channels=3)##图片解码，没进行实际解码 jpeg图片只有三通道，不指定通道时，png为4通道传入
+##三阶张量
   def read_image_dims(self, sess, image_data):
     image = self.decode_jpeg(sess, image_data)
     return image.shape[0], image.shape[1]
 
-  def decode_jpeg(self, sess, image_data):
+  def decode_jpeg(self, sess, image_data):##实际的解码
     image = sess.run(self._decode_jpeg,
                      feed_dict={self._decode_jpeg_data: image_data})
     assert len(image.shape) == 3
@@ -87,7 +88,7 @@ def _get_filenames_and_classes(dataset_dir):
     path = os.path.join(flower_root, filename)
     if os.path.isdir(path):
       directories.append(path)
-      class_names.append(filename)
+      class_names.append(filename)##每目是分类的名字
 
   photo_filenames = []
   for directory in directories:
@@ -133,18 +134,20 @@ def _convert_dataset(split_name, filenames, class_names_to_ids, dataset_dir):
           for i in range(start_ndx, end_ndx):
             sys.stdout.write('\r>> Converting image %d/%d shard %d' % (
                 i+1, len(filenames), shard_id))
-            sys.stdout.flush()
+            sys.stdout.flush()##回到开头
 
             # Read the filename:
             image_data = tf.gfile.FastGFile(filenames[i], 'rb').read()
             height, width = image_reader.read_image_dims(sess, image_data)
 
             class_name = os.path.basename(os.path.dirname(filenames[i]))
-            class_id = class_names_to_ids[class_name]
-
+            class_id = class_names_to_ids[class_name]           
+            
+            
+  
             example = dataset_utils.image_to_tfexample(
                 image_data, b'jpg', height, width, class_id)
-            tfrecord_writer.write(example.SerializeToString())
+            tfrecord_writer.write(example.SerializeToString())##写到tf  
 
   sys.stdout.write('\n')
   sys.stdout.flush()
